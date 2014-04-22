@@ -113,7 +113,7 @@ The MB85RS chips supported by the current version of this library are listed in 
   
 With one exception, the supported chips operate at 3.3V.  You need to level convert their inputs and outputs to 5V before they connect to the Arduino.
 
-![alt text](https://github.com/Hackscribble/hackscribble-ferro-library/blob/master/documentation/schematic.jpg "schematic")
+![alt text](https://raw.githubusercontent.com/hackscribble/hackscribble-ferro-library/master/documentation/schematic.jpg "schematic")
 
 You can build in level conversion to your circuit design or use an off-the-shelf converter breakout, such as this Adafruit 4-channel board: http://www.adafruit.com/products/757.
 
