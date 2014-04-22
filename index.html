@@ -1,0 +1,175 @@
+---
+layout: hackscribble-main
+title: Hackscribble | Hackscribble_Ferro Library
+---
+
+	<section id="content" class="">
+
+        <div class="row" class = "">
+		    <div class="large-12 columns my-column">	
+			    <h2 class="my-headline">Hackscribble Ferro - a FRAM library for Arduino.</h2>
+                <p>
+                    Add fast, versatile, non-volatile ferroelectric memory (FRAM) to your Arduino.  Simple hardware
+                    interface using SPI bus supports up to 32KB per FRAM chip.
+                </p>
+                <p><p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="large-12 columns">
+                <hr class="my-hr"></hr>
+            </div>
+        </div>
+ 
+		<div class="row" class = "">
+
+	        <div class="large-8 columns my-column">	
+                <h2 class="my-headline">The joy of FRAM.</h2>
+                <p>
+                    One of the challenges of designing around an Arduino is working within its memory limits.  
+                    We have a test equipment project in the pipeline which needs to make
+                    large numbers of measurements and buffer them before sending them to a controlling
+                    PC.  So we started to look at the options for adding extra storage. SD card, Flash memory, 
+                    EEPROM, SRAM - they all have pros and cons.  Our choice was Ferroelectric RAM (or "FRAM").  
+                </p> 
+                <img class="my-image show-for-small" src="img/fujitsu_drawing.jpg" />
+                <p>  
+                    The advantages we saw in FRAM were: 
+                </p>
+                <ul>
+                    <li>high speed reading and writing</li>
+                    <li>non-volatile - it remembers its contents without needing power or battery backup</li>
+                    <li>virtually unlimited read / write cycles - you can't wear it out unlike some other types of 
+                    non-volatile memory</li>    
+                </ul>
+                <p>
+                    To save on I/O pins, we wanted to use the I2C or SPI bus to connect to the FRAM. We could not track 
+                    down an addressable I2C FRAM that would co-exist with the other I2C devices already in our project.  
+                    So we turned to SPI instead and settled on the MB85RS range of FRAM from Fujitsu. 
+                </p>
+                <p>
+                    Each MB85RS chip adds up to 32KB of fast, non-volatile storage to the Arduino.  
+                    You can read more about the MB85RS range and download datasheets from the 
+                    <a href="http://www.fujitsu.com/global/services/microelectronics/product/memory/fram/standalone/#a4" target="_blank">Fujitsu website</a>.
+                </p>
+                <p>
+                    Building the hardware interface to the FRAM chips was relatively simple.  The only complication was 
+                    translating from the 5V Arduino inputs and outputs to the 3.3V interface of (all but one of) the 
+                    MB85RS chips.  We solved this using an 
+                    <a href="http://www.adafruit.com/products/757" target="_blank">Adafruit level translator breakout</a>, 
+                    but we are also working on a more compact design to embed in our test equipment project.
+                    More on this soon.
+                </p>
+
+ <!--               <ul class="small-block-grid-1 large-block-grid-1">
+                    <li><img class="my-image" src="img/schematic.jpg" /></li>
+                </ul>
+     -->
+                <img class="my-image" src="img/schematic.jpg" />
+
+
+                <p>
+                    The software interface took more time.  We could not find an existing Arduino FRAM library, so we
+                    wrote our own: <strong>Hackscribble Ferro</strong>.
+                </p>
+                <hr class="my-hr"></hr>
+                <h2 class="my-headline">A quick peek at the library.</h2>
+		        <p>
+			        We wanted to make it as easy as possible to use the FRAM in our Arduino sketches, hiding much of the
+                    detailed management of the FRAM.  So we wrote two classes:
+		        </p>
+                <ul>
+                    <li>
+                        <strong>Hackscribble_Ferro</strong> controls the FRAM through the Arduino's SPI bus and provides 
+                        basic functions for reading and writing.
+                    </li>
+                    <li>
+                        <strong>Hackscribble_FerroArray</strong> builds on Hackscribble_Ferro and lets us create arrays of 
+                        data which are stored in the FRAM.  For each array, we can choose the type of data (e.g. <em>byte</em>, 
+                        <em>integer</em>, <em>float</em>, etc) and how many items are in the array (up to the maximum size 
+                        of the FRAM). 
+                    </li>
+                </ul>
+                <p>
+                    In our sketches, we create an instance of Hackscribble_Ferro for each FRAM connected to the Arduino:
+                </p>
+		        <pre><code class="ruby"><div class="my-code-container">
+#include &lt;Hackscribble_Ferro>
+Hackscribble_Ferro myFerro;
+ferroResult beginResult = myFerro.begin();
+			    </div></code></pre>
+			    <p><p>
+				    Hackscribble_FerroArray takes care of how the arrays are stored in the FRAM, and provides simple 
+                    functions to read from and write to them.  Most of the time, we only need the methods in this class; 
+                    we don't use Hackscribble_Ferro methods directly.
+			    </p>
+			    <p>
+				    We create an array like this (an example of an array of 200 floating point numbers):
+			    <pre><code class="ruby"><div class="my-code-container">
+ferroResult myResult;
+Hackscribble_FerroArray myFloatArray(myFerro, 200, sizeof(float), myResult);
+			    </div></code></pre>
+			    <p><p>
+				    This is how to write the value of a variable called <em>myFloat</em> to the 12th position in this array:
+			    </p>
+			    <pre><code class="ruby"><div class="my-code-container">
+myArray.WriteElement(12, (byte*)&myFloat, myResult);
+			    </div></code></pre>
+				<p><p>
+					We have tested this first release of Hackscribble_FerroArray with <em>boolean</em>, <em>char</em>, 
+                    <em>byte</em>, <em>int</em>, <em>unsigned int</em>, <em>long</em>, <em>unsigned long</em>, 
+                    <em>float</em>, character array (<em>char [&nbsp;]</em>) and user-defined structures (<em>struct</em>).    
+				</p>
+				<p>
+					The great thing about FRAM is that, so long as we don't change how the arrays are defined, each time 
+                    we run the sketch, the arrays will be stored in the same place in the FRAM. So we can write data into 
+                    the arrays, switch off the Arduino, run the sketch again some time later and read the same data out of 
+                    the arrays.
+				</p>
+            </div>
+			
+			<div class="large-4 columns my-column">
+                <hr class="my-hr show-for-small"></hr>
+                <p>
+                    <b>
+                        Read the
+                        <a href="{{ site.github.repository_url }}/blob/master/documentation/user guide.md" target="_blank">user guide</a>
+                        for detailed information on Hackscribble Ferro and how to connect to your FRAM chips.
+                    </b>
+                </p>
+                <img class="my-image" src="img/FRAM_proto_board_medium.jpg" />
+                <p>
+                    <b>
+                        <a href="{{ site.github.repository_url }}/archive/master.zip">
+                            Download the library, example sketches and user guide.
+                        </a>
+                    </b>
+                </p>
+                <p>
+                    <b>
+                        <a href="{{ site.github.repository_url }}"><i class="icon-github"></i>&nbsp;&nbsp;Go to GitHub repository</a>
+                    </b>
+                </p>
+                <hr class="my-hr"></hr>
+                <h2 class="my-headline">What next?</h2>
+                <p>
+                    We are looking at several options to develop Hackscribble Ferro further:
+                    <ul>
+                        <li>Extending the library to work with the newer MB85RS1MT and MB85RS2MT devices, giving
+                            up to 256KB of storage per chip.</li>
+                        <li>Adding auto-detect capability to the library.</li>
+                        <li>Designing an Arduino shield or mini-shield to carry one or more FRAM chips.</li>
+                    </ul>
+                </p>
+                <p><p>
+                    <img src="img/pcb_medium.jpg" class="my-image" />
+                </p>
+
+			</div>
+			
+        </div>
+
+    </section>
+
+

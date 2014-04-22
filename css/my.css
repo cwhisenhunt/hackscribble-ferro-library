@@ -1,0 +1,117 @@
+﻿.my-top-bar {
+    background-color: #25242C;
+    padding-top: 5px; 
+    padding-left: 5px;
+}
+
+.my-scroll-show {
+    display: none; /* until changed by JS for top scroll */
+}
+
+.my-banner {
+    background-color: #25242C;
+	color: #DDDDDD;
+    font-family: Roboto, sans-serif;
+    font-weight: 700;
+}
+
+.my-footer {
+    background-color: #25242c;
+	color: #1FD26A;
+    font-family: Roboto, sans-serif;
+}
+
+.my-big {
+    height: 80%; 
+    width: 80%;
+}
+
+.my-open-logos {
+        height: 20%;
+        width: 20%;
+        float: right;
+}
+
+.my-column {
+	padding-top: 10px;
+}
+
+.my-image {
+    margin-bottom: 10px;
+    -webkit-box-shadow: 0 8px 6px -6px black;
+	   -moz-box-shadow: 0 8px 6px -6px black;
+	        box-shadow: 0 8px 6px -6px black;
+}
+
+.my-headline {
+	color: #F8F8F8;
+    text-align: center;
+	font-family: 'Roboto', sans-serif;
+	font-weight: 300;
+}
+
+.my-header {
+	color: #F8F8F8;
+	font-family: 'Roboto', sans-serif;
+	font-weight: 500;	
+}
+
+.my-small-print {
+       color: #DDDDDD;
+       font-size: 70%;
+       line-height: 1.0;
+}
+
+p {
+    font-weight: 300;
+}
+
+.my-body {
+	font-family: 'Roboto', sans-serif;
+	font-weight: 300;
+    color: #DDDDDD;
+    background-color: #32313B;
+}
+
+.hljs {
+    background-color: #D9D9D9;
+}
+.hljs, .hljs-constant, .hljs-string, .hljs-keyword, .hljs-number {
+    font-family: 'Droid Sans Mono' ;
+}
+
+.my-code-container {
+    /* Enables horizontal scrolling on small devices */
+    overflow-x: auto;
+    /* Prevents vertical scroll bar on large devices */
+    line-height: 1.25;
+}
+
+hr {
+    margin-bottom: 5px;
+    margin-top: 5px;
+    border-color: #6F6F6F;
+}
+
+hr.my-hr {
+    border: 2px solid #6F6F6F;
+}
+
+hr.my-hr-too {
+    border: none;
+    height: 14px;
+    overflow: hidden;
+}
+
+hr.my-hr-too:after {
+    content: "●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●";
+    letter-spacing: 12px;
+    color: #6F6F6F;
+    font-size: 10px;
+}
+
+.panel {
+    background-color: #25242C;
+    border-width: 0;
+}
+

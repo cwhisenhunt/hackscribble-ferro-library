@@ -1,0 +1,119 @@
+﻿<!doctype html>
+<html class="no-js" lang="en">
+  
+<head>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page.title }}</title>
+	
+	<link href='http://fonts.googleapis.com/css?family=Roboto:400,300,400italic,300italic,500,500italic,700,700italic,100,100italic,900,900italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
+	
+	<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/paraiso.light.min.css"> 
+	<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+
+	<link rel="stylesheet" href="css/foundation.min.css" />
+    <link rel="stylesheet" href="css/my.css" />
+    <link rel="stylesheet" href="css/font-awesome.css" />
+    <script src="js/vendor/modernizr.js"></script>
+    
+</head>
+
+<body class="my-body">
+
+    <div class="fixed"> 
+        <nav class="top-bar my-top-bar" data-topbar>
+            <ul class="title-area">
+                &nbsp;
+                <a href="http://{{ site.github.owner_name }}.github.io/">
+                    <i class="icon-home icon-2x"></i>
+                </a>
+                &nbsp;
+                <a href="#top">
+                    <span class="my-scroll-show" >
+                        <i class="icon-arrow-up icon-2x"></i>
+                    </span>
+                </a>
+            </ul>
+        </nav> 
+    </div>
+    
+	<section id="banner" class="my-banner">
+        <div class="row">
+            <div class="large-6 columns">
+                <a href="http://{{ site.github.owner_name }}.github.io/">
+                    <img class="show-for-large my-big" src="img/banner logo 04.jpg">
+                    <img class="hide-for-large" src="img/banner logo 04.jpg">
+                </a>
+            </div>
+            <div class="large-6 columns">
+            </div>
+        </div>
+        <div class="row">
+            <div class="large-12 columns">
+                <h5 class="my-banner">Writing about making things.</h5>
+            </div>
+        </div>
+	</section>
+	
+	{{ content }}
+
+    <section id="footer" class="my-footer">
+        <div class="row">
+            <div class="large-4 columns">
+                <h3 class="my-footer"><small>Contact.</small></h3>
+                <hr />
+                <p>
+                <a href="mailto:git@hackscribble.com"><i class="icon-envelope"></i>&nbsp;&nbsp;&nbsp;git@hackscribble.com</a><br>
+                <a href="https://github.com/hackscribble/feedback/issues/new"><i class="icon-github"></i>&nbsp;&nbsp;&nbsp;Leave feedback via GitHub</a></p>
+           </div>
+            <div class="large-4 columns">
+                <h3 class="my-footer"><small>Social media.</small></h3>
+                <hr />
+                <p>
+                    <a href="http://www.twitter.com/hackscribble"><i class="icon-twitter"></i>&nbsp;&nbsp;&nbsp;@hackscribble</a><br>
+                </p>
+            </div>
+            <div class="large-4 columns">
+                <h3 class="my-footer"><small>Small but important.</small></h3>
+                <hr />
+                <span class="my-small-print">
+                    This website by Ray Benitez and the software projects shown on it are (unless otherwise noted) licensed under the <a rel="license" href="LICENSE.txt" target="_blank">MIT License</a>.<br />
+                    The hardware designs shown on this website are (unless otherwise noted) licensed under the <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+                    <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/4.0/80x15.png" /></a>
+                    <p></p>
+                </span>
+                <ul class="small-block-grid-1 large-block-grid-1">
+                    <li><img class=" " src="img/open logos 05.jpg" /></li>
+                </ul>
+
+            </div>
+  
+
+        </div>
+    </section>
+
+    <script src="js/vendor/jquery.js"></script>
+    <script src="js/foundation.min.js"></script>
+    <script>
+        $(document).foundation();
+        $("a[href='#top']").click(function () {
+            $("html, body").animate({ scrollTop: 0 }, "slow");
+            return false;
+        });
+        $(window).scroll(function () {
+            if ($(this).scrollTop() < 100) {
+                $('.my-scroll-show').fadeOut();
+            }
+            else {
+                $('.my-scroll-show').fadeIn();
+            }
+        });
+    </script>
+   
+
+</body>
+
+</html>
