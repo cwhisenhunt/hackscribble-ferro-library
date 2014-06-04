@@ -100,7 +100,7 @@ ferroResult Hackscribble_Ferro::checkForFRAM()
 {
 	// Tests that the unused status register bits can be read, inverted, written back and read again
 		
-	const byte srMask = 0x78; // Unused bits are bits 6..4
+	const byte srMask = 0x70; // Unused bits are bits 6..4
 	byte registerValue = 0;
 	byte newValue = 0;
 	boolean isPresent = true;
@@ -111,7 +111,7 @@ ferroResult Hackscribble_Ferro::checkForFRAM()
 	registerValue = SPI.transfer(_dummy);
 	_deselect();
 		
-	// Invert current value
+	// Invert current value of unused bits
 	newValue = registerValue ^ srMask;
 		
 	// Write new value
