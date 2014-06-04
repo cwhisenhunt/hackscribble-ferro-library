@@ -12,8 +12,8 @@
 	
 	Created on 18 April 2014
 	By Ray Benitez
-	Last modified on ---
-	By ---
+	Last modified on 4 June 2014
+	By Ray Benitez
 	Change history in "README.md"
 	
 	This software is licensed by Ray Benitez under the MIT License.
