@@ -11,8 +11,8 @@
 	
 	Created on 18 April 2014
 	By Ray Benitez
-	Last modified on ---
-	By ---
+	Last modified on 28 April 2014
+	By Ray Benitez
 	Change history in "README.md"
 		
 	This software is licensed by Ray Benitez under the MIT License.
@@ -21,6 +21,17 @@
 
 
 */
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Enable or disable write instructions - enables testing of non-volatility
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// To test non-volatility of FRAM ...
+//		Compile and run this sketch
+//		Comment out following #define statement, which creates identical arrays but prevents writing to them
+//		Recompile and rerun this sketch
+// You should still see expected results
+#define WRITE_TO_FRAM
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,6 +59,12 @@ void setup()
 	Serial.begin(115200);
 	Serial.println(F("\n\n\n\n\nHACKSCRIBBLE_FERRO ARRAY TYPES"));
 	Serial.println(F("==============================\n"));
+	
+#ifndef WRITE_TO_FRAM
+	
+	Serial.println(F("Not writing to FRAM - just reading values previously written"));
+	
+#endif
 	
 	// Hackscribble_Ferro library uses standard Arduino SPI pin definitions:  MOSI, MISO, SCK.
 	// Next statement creates an instance of Ferro using the standard Arduino SS pin and
@@ -113,7 +130,11 @@ void setup()
 		Hackscribble_FerroArray myBooleanArray(myFerro, 10, sizeof(boolean), myResult);
 		testBoolean = true;
 		newBoolean = false;
+		
+#ifdef WRITE_TO_FRAM
 		myBooleanArray.writeElement(0, (uint8_t*)&testBoolean, myResult);
+#endif
+
 		myBooleanArray.readElement(0, (uint8_t*)&newBoolean, myResult);
 		if (newBoolean == true)
 		{
@@ -133,7 +154,11 @@ void setup()
 		Hackscribble_FerroArray myCharArray(myFerro, 10, sizeof(char), myResult);
 		testChar = 'Z';
 		newChar = 'A';
+		
+#ifdef WRITE_TO_FRAM
 		myCharArray.writeElement(1, (uint8_t*)&testChar, myResult);
+#endif
+
 		myCharArray.readElement(1, (uint8_t*)&newChar, myResult);
 		Serial.println(newChar);
 
@@ -146,7 +171,11 @@ void setup()
 		Hackscribble_FerroArray myByteArray(myFerro, 10, sizeof(byte), myResult);
 		testByte = 250;
 		newByte = 42;
+
+#ifdef WRITE_TO_FRAM
 		myByteArray.writeElement(2, (uint8_t*)&testByte, myResult);
+#endif
+
 		myByteArray.readElement(2, (uint8_t*)&newByte, myResult);
 		Serial.println(newByte);
 
@@ -159,7 +188,11 @@ void setup()
 		Hackscribble_FerroArray myIntArray(myFerro, 10, sizeof(int), myResult);
 		testInt = -12345;
 		newByte = 4321;
+		
+#ifdef WRITE_TO_FRAM
 		myIntArray.writeElement(3, (uint8_t*)&testInt, myResult);
+#endif
+
 		myIntArray.readElement(3, (uint8_t*)&newInt, myResult);
 		Serial.println(newInt);
 
@@ -172,7 +205,12 @@ void setup()
 		Hackscribble_FerroArray myUIntArray(myFerro, 10, sizeof(unsigned int), myResult);
 		testUInt = 54321;
 		newUInt = 12345;
+
+
+#ifdef WRITE_TO_FRAM
 		myUIntArray.writeElement(4, (uint8_t*)&testUInt, myResult);
+#endif
+
 		myUIntArray.readElement(4, (uint8_t*)&newUInt, myResult);
 		Serial.println(newUInt);
 	
@@ -185,7 +223,12 @@ void setup()
 		Hackscribble_FerroArray myLongArray(myFerro, 10, sizeof(long), myResult);
 		testLong = -1234567;
 		newByte = 4321;
+
+
+#ifdef WRITE_TO_FRAM
 		myLongArray.writeElement(5, (uint8_t*)&testLong, myResult);
+#endif
+
 		myLongArray.readElement(5, (uint8_t*)&newLong, myResult);
 		Serial.println(newLong);
 
@@ -198,7 +241,12 @@ void setup()
 		Hackscribble_FerroArray myULongArray(myFerro, 10, sizeof(unsigned long), myResult);
 		testULong = 3213213;
 		newULong = 12345;
+
+
+#ifdef WRITE_TO_FRAM
 		myULongArray.writeElement(6, (uint8_t*)&testULong, myResult);
+#endif
+
 		myULongArray.readElement(6, (uint8_t*)&newULong, myResult);
 		Serial.println(newULong);
 
@@ -211,7 +259,12 @@ void setup()
 		Hackscribble_FerroArray myFloatArray(myFerro, 10, sizeof(float), myResult);
 		testFloat = 3.14159;
 		newULong = 12345;
+
+
+#ifdef WRITE_TO_FRAM
 		myFloatArray.writeElement(7, (uint8_t*)&testFloat, myResult);
+#endif
+
 		myFloatArray.readElement(7, (uint8_t*)&newFloat, myResult);
 		Serial.println(newFloat, 5);
 		
@@ -224,7 +277,12 @@ void setup()
 		Hackscribble_FerroArray myCharAArray(myFerro, 10, sizeof(char[testCharArrayLength]), myResult);
 		strcpy(testCharA, "1234567890123456789");
 		strcpy(newCharA,  "AAAAAAAAAAAAAAAAAAA");
+
+
+#ifdef WRITE_TO_FRAM
 		myCharAArray.writeElement(8, (uint8_t*)&testCharA, myResult);
+#endif
+
 		myCharAArray.readElement(8, (uint8_t*)&newCharA, myResult);
 		Serial.println(newCharA);
 		

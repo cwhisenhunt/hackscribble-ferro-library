@@ -12,8 +12,8 @@
 	
 	Created on 18 April 2014
 	By Ray Benitez
-	Last modified on ---
-	By ---
+	Last modified on 10 June 2014
+	By Ray Benitez
 	Change history in "README.md"
 		
 	This software is licensed by Ray Benitez under the MIT License.
@@ -65,6 +65,8 @@ private:
 
 	ferroPartNumber _partNumber;
 	byte _chipSelect;
+	volatile uint8_t *_out;
+	uint8_t _bit;
 	
 	// FRAM opcodes
 	static const byte _WREN = 0x06;
@@ -91,6 +93,7 @@ private:
 	// FRAM current next byte to allocate
 	unsigned int _nextFreeByte;
 
+	void _initialiseChipSelect();
 	void _select();
 	void _deselect();
 

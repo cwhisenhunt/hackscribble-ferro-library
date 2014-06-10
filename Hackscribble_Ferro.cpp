@@ -12,7 +12,7 @@
 	
 	Created on 18 April 2014
 	By Ray Benitez
-	Last modified on 4 June 2014
+	Last modified on 10 June 2014
 	By Ray Benitez
 	Change history in "README.md"
 	
@@ -23,20 +23,39 @@
 */
 
  
-
+#include "wiring_digital.c"
 #include "Arduino.h"
 #include <Hackscribble_Ferro.h>
 
 
+void Hackscribble_Ferro::_initialiseChipSelect()
+{	
+	uint8_t timer = digitalPinToTimer(_chipSelect);
+	_bit = digitalPinToBitMask(_chipSelect);
+	uint8_t port = digitalPinToPort(_chipSelect);
+	if (port == NOT_A_PIN) return;
+	// If the pin that support PWM output, we need to turn it off
+	// before doing a digital write.
+	if (timer != NOT_ON_TIMER) turnOffPWM(timer);
+	_out = portOutputRegister(port);
+}
 
 void Hackscribble_Ferro::_select()
 {
-	digitalWrite(_chipSelect, LOW);
+	// digitalWrite(_chipSelect, LOW);
+	uint8_t oldSREG = SREG;
+	cli();
+	*_out &= ~_bit;
+	SREG = oldSREG;
 }
 
 void Hackscribble_Ferro::_deselect()
 {
-	digitalWrite(_chipSelect, HIGH);
+	// digitalWrite(_chipSelect, HIGH);
+	uint8_t oldSREG = SREG;
+	cli();
+	*_out |= _bit;
+	SREG = oldSREG;
 }
 
 Hackscribble_Ferro::Hackscribble_Ferro(ferroPartNumber partNumber, byte chipSelect): _partNumber(partNumber), _chipSelect(chipSelect)
@@ -57,7 +76,8 @@ Hackscribble_Ferro::Hackscribble_Ferro(ferroPartNumber partNumber, byte chipSele
 	// Set the standard SS pin as an output to keep Arduino SPI happy
 	pinMode (SS, OUTPUT);
 	// Set CS to inactive
-	pinMode (chipSelect, OUTPUT);
+	_initialiseChipSelect();
+	pinMode (_chipSelect, OUTPUT);
 	_deselect();
 	_nextFreeByte = _bottomAddress;
 }
@@ -111,7 +131,7 @@ ferroResult Hackscribble_Ferro::checkForFRAM()
 	registerValue = SPI.transfer(_dummy);
 	_deselect();
 		
-	// Invert current value of unused bits
+	// Invert current value
 	newValue = registerValue ^ srMask;
 		
 	// Write new value
