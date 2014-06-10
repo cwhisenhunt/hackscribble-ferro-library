@@ -5,7 +5,7 @@ Hackscribble_Ferro Library
 
   
 Created on 18 April 2014 by Ray Benitez  
-Last modified on 19 June 2014 by Ray Benitez		
+Last modified on 10 June 2014 by Ray Benitez		
   
 Please see **user guide.md** for more information on how to use the library.
 
