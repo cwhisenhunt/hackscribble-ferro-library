@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ page.title }}</title>
 	
-	<link href='http://fonts.googleapis.com/css?family=Roboto:400,300,400italic,300italic,500,500italic,700,700italic,100,100italic,900,900italic' rel='stylesheet' type='text/css'>
+	<link href='http://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic' rel='stylesheet' type='text/css'>
     <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
 	
 	<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/paraiso.light.min.css"> 
@@ -32,7 +32,7 @@
                 </a>
                 &nbsp;
                 <a href="#top">
-                    <span class="my-scroll-show" >
+                    <span id="top-scroll-button" >
                         <i class="icon-arrow-up icon-2x"></i>
                     </span>
                 </a>
@@ -44,8 +44,7 @@
         <div class="row">
             <div class="large-6 columns">
                 <a href="http://{{ site.github.owner_name }}.github.io/">
-                    <img class="show-for-large my-big" src="img/banner logo 04.jpg">
-                    <img class="hide-for-large" src="img/banner logo 04.jpg">
+                    <img src="img/banner logo 04.jpg">
                 </a>
             </div>
             <div class="large-6 columns">
@@ -105,10 +104,10 @@
         });
         $(window).scroll(function () {
             if ($(this).scrollTop() < 100) {
-                $('.my-scroll-show').fadeOut();
+                $('#top-scroll-button').fadeOut();
             }
             else {
-                $('.my-scroll-show').fadeIn();
+                $('#top-scroll-button').fadeIn();
             }
         });
     </script>
