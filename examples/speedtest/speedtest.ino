@@ -11,7 +11,7 @@
 	
 	Created on 8 May 2014
 	By Ray Benitez
-	Last modified on 4 June 2014
+	Last modified on 18 September 2014
 	By Ray Benitez
 	Change history in "README.md"
 		
@@ -172,7 +172,9 @@ void setup()
         averageTimeMicroSeconds = (1000.0 * duration) / numberOfOperations;
         Serial.print(averageTimeMicroSeconds, 1);
 		Serial.println(" us");
-                
+       
+	   	Serial.println(F("\n\n\nEND OF TESTS"));
+	   	Serial.println(F("============\n"));         
 	}
 
 }

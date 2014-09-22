@@ -1,11 +1,11 @@
 Hackscribble_Ferro Library
 ==========================
 
-#### *Add fast, versatile, non-volatile ferroelectric memory (FRAM) to your Arduino. Simple hardware interface using SPI bus supports up to 32KB per FRAM chip.*
+#### *Add fast, versatile, non-volatile ferroelectric memory (FRAM) to your Arduino. Simple hardware interface using SPI bus supports up to 256KB per FRAM chip.*
 
   
 Created on 18 April 2014 by Ray Benitez  
-Last modified on 10 June 2014 by Ray Benitez		
+Last modified on 22 September 2014 by Ray Benitez		
   
 Please see **user guide.md** for more information on how to use the library.
 
@@ -17,6 +17,16 @@ git@hackscribble.com | http://www.hackscribble.com | http://www.twitter.com/hack
  
 
 ### Change history
+
+#### 1.4 (22 September 2014)
+
+Changed memory addresses, array indices and array element sizes to support 24-bit addresses.
+
+Added MB85RS1MT and MB85RS2MT to list of supported ICs.
+
+Moved hardware initiation from constructor to begin().
+
+Added validation of Product ID with part number (for devices supporting RDID opcode).
 
 #### 1.3 (10 June 2014)
 

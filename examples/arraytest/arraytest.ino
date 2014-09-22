@@ -11,8 +11,8 @@
 	
 	Created on 29 May 2014
 	By Ray Benitez
-	Last modified on ---
-	By ---
+	Last modified on 22 September 2014
+	By Ray Benitez
 	Change history in "README.md"
 		
 	This software is licensed by Ray Benitez under the MIT License.
@@ -65,6 +65,12 @@ void printPartNumber(ferroPartNumber pn)
 		case MB85RS256B:
 		Serial.print("MB85RS256B");
 		break;
+		case MB85RS1MT:
+		Serial.print("MB85RS1MT");
+		break;
+		case MB85RS2MT:
+		Serial.print("MB85RS2MT");
+		break;
 		default :
 		Serial.print("unknown part number");
 	}
@@ -114,12 +120,12 @@ void setup()
 
 		// TEST 2
 		
-		unsigned int myBottom = myFerro.getBottomAddress();
-		unsigned int myTop = myFerro.getTopAddress();
+		unsigned long myBottom = myFerro.getBottomAddress();
+		unsigned long myTop = myFerro.getTopAddress();
 		
-		unsigned int mySpace = myTop - myBottom;
+		unsigned long mySpace = myTop - myBottom;
 		byte uintSize = sizeof(unsigned int);
-		unsigned int myItems = mySpace / uintSize;
+		unsigned long myItems = mySpace / uintSize;
 		Hackscribble_FerroArray myArray(myFerro, myItems, uintSize, myResult);
 		unsigned int myData = 0;
 		
@@ -130,14 +136,12 @@ void setup()
 		Serial.print("Number of array elements: ");
 		Serial.println(myItems);
 		
-
-		
 		Serial.println(F("\nTest: write 0s into array and read to check"));
 		Serial.println(F("Expected result: no error messages"));
 		Serial.println(F("Result ..."));
 		
 		myData = 0;
-		for (unsigned int i = 0; i < myItems; i++)
+		for (unsigned long i = 0; i < myItems; i++)
 		{
 			myArray.writeElement(i, (uint8_t*)&myData, myResult);
 		}
@@ -149,7 +153,7 @@ void setup()
 		
 		Serial.println("Start of checks");
 		
-		for (unsigned int i = 0; i < myItems; i++)
+		for (unsigned long i = 0; i < myItems; i++)
 		{
 			myArray.readElement(i, (uint8_t*)&myData, myResult);
 			if (myData != 0)
@@ -169,11 +173,10 @@ void setup()
 		Serial.println(F("Expected result: no error messages"));
 		Serial.println(F("Result ..."));
 		
-		for (unsigned int i = 0; i < myItems; i++)
+		for (unsigned long i = 0; i < myItems; i++)
 		{
-			myData = i * 2;
+			myData = (int)((i * 2) % 65536UL);
 			myArray.writeElement(i, (uint8_t*)&myData, myResult);
-			// Serial.print(i); Serial.print(" "); Serial.print(myData); Serial.print(" "); Serial.print(myResult); Serial.println();
 		}
 
 #ifdef FORCE_ERRORS
@@ -182,10 +185,10 @@ void setup()
 #endif
 		
 		Serial.println("Start of checks");
-		for (unsigned int i = 0; i < myItems; i++)
+		for (unsigned long i = 0; i < myItems; i++)
 		{
 			myArray.readElement(i, (uint8_t*)&myData, myResult);
-			if (myData != i * 2)
+			if (myData != (int)((i * 2) % 65536UL))
 			{
 				Serial.print("Error: item ");
 				Serial.print(i);
@@ -197,9 +200,6 @@ void setup()
 		
 		
 
-
-
-		
 		Serial.println(F("\n\n\nEND OF TESTS"));
 		Serial.println(F("============\n"));
 		

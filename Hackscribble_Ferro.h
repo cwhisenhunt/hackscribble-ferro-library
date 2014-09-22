@@ -4,7 +4,7 @@
 	==========================
 	
 	Connects Fujitsu Ferroelectric RAM (MB85RS range) to your 
-	Arduino to add up to 32KB of fast, non-volatile storage.
+	Arduino to add up to 256KB of fast, non-volatile storage.
 	
 	For information on how to install and use the library,
 	read "Hackscribble_Ferro user guide.md".
@@ -12,7 +12,7 @@
 	
 	Created on 18 April 2014
 	By Ray Benitez
-	Last modified on 10 June 2014
+	Last modified on 19 September 2014
 	By Ray Benitez
 	Change history in "README.md"
 		
@@ -33,15 +33,25 @@
 
 enum ferroPartNumber
 {
-	MB85RS16 = 0,
-	MB85RS64,
-	MB85RS128A,
-	MB85RS128B,
-	MB85RS256A,
-	MB85RS256B,
+	MB85RS16 = 0,		// 2KB
+	MB85RS64,			// 8KB
+	MB85RS128A,			// 16KB older model
+	MB85RS128B,			// 16KB newer model
+	MB85RS256A,			// 32KB older model
+	MB85RS256B,			// 32KB newer model
+	MB85RS1MT,			// 128KB
+	MB85RS2MT,			// 256KB
 	numberOfPartNumbers
 };
+		
+// MB85RS address lengths
 
+enum ferroAddressLength
+{
+	ADDRESS16BIT = 0,
+	ADDRESS24BIT,
+	numberOfAddressLengths
+};
 
 // Result codes
 
@@ -55,6 +65,7 @@ enum ferroResult
 	ferroBadArrayIndex,
 	ferroBadArrayStartAddress,
 	ferroBadResponse,
+	ferroPartNumberMismatch,
 	ferroUnknownError = 99
 };
 
@@ -75,23 +86,27 @@ private:
 	static const byte _READ = 0x03;
 	static const byte _RDSR = 0x05;
 	static const byte _WRSR = 0x01;
+	static const byte _RDID = 0x9F;
 
 	// Dummy write value for SPI read
 	static const byte _dummy = 0x00;
 
 	// Set maximum size of buffer used to write to and read from FRAM
 	// Do not exceed 0x80 to prevent problems with maximum size structs in FerroArray
-	static const unsigned int _maxBufferSize = 0x40;
+	static const byte _maxBufferSize = 0x40;
 
 	// Used in constructor to set size of usable FRAM memory, reserving some bytes as a control block
-	/* static const*/ unsigned int _topAddressForPartNumber[numberOfPartNumbers];
-	unsigned int _baseAddress;
-	unsigned int _bottomAddress;
-	unsigned int _topAddress;
-	unsigned int _numberOfBuffers;
+	unsigned long _topAddressForPartNumber[numberOfPartNumbers];
+	ferroAddressLength _addressLengthForPartNumber[numberOfPartNumbers];
+	ferroAddressLength _addressLength;
+	byte _densityCode[numberOfPartNumbers];
+	unsigned long _baseAddress;
+	unsigned long _bottomAddress;
+	unsigned long _topAddress;
+	unsigned long _numberOfBuffers;
 	
 	// FRAM current next byte to allocate
-	unsigned int _nextFreeByte;
+	unsigned long _nextFreeByte;
 
 	void _initialiseChipSelect();
 	void _select();
@@ -102,16 +117,17 @@ public:
 	Hackscribble_Ferro(ferroPartNumber partNumber = MB85RS128A, byte chipSelect = SS);
 	ferroResult begin();
 	ferroPartNumber getPartNumber();
-	unsigned int getMaxBufferSize();
-	unsigned int getBottomAddress();
-	unsigned int getTopAddress();
+	byte readProductID();
+	byte getMaxBufferSize();
+	unsigned long getBottomAddress();
+	unsigned long getTopAddress();
 	ferroResult checkForFRAM();
-	unsigned int getControlBlockSize();
+	byte getControlBlockSize();
 	void writeControlBlock(byte *buffer);
 	void readControlBlock(byte *buffer);
-	ferroResult read(unsigned int startAddress, byte numberOfBytes, byte *buffer);
-	ferroResult write(unsigned int startAddress, byte numberOfBytes, byte *buffer);
-	unsigned int allocateMemory(unsigned int numberOfBytes, ferroResult& result);
+	ferroResult read(unsigned long startAddress, byte numberOfBytes, byte *buffer);
+	ferroResult write(unsigned long startAddress, byte numberOfBytes, byte *buffer);
+	unsigned long allocateMemory(unsigned long numberOfBytes, ferroResult& result);
 	ferroResult format();
 
 };
@@ -121,17 +137,17 @@ class Hackscribble_FerroArray
 {
 private:
 
-	unsigned int _numberOfElements;
+	unsigned long _numberOfElements;
 	byte _sizeOfElement;
-	unsigned int _startAddress;
+	unsigned long _startAddress;
 	Hackscribble_Ferro& _f;
 	
 public:
 	
-	Hackscribble_FerroArray(Hackscribble_Ferro& f, unsigned int numberOfElements, byte sizeOfElement, ferroResult &result);
-	void readElement(unsigned int index, byte *buffer, ferroResult &result);
-	void writeElement(unsigned int index, byte *buffer, ferroResult &result);
-	unsigned int getStartAddress();
+	Hackscribble_FerroArray(Hackscribble_Ferro& f, unsigned long numberOfElements, byte sizeOfElement, ferroResult &result);
+	void readElement(unsigned long index, byte *buffer, ferroResult &result);
+	void writeElement(unsigned long index, byte *buffer, ferroResult &result);
+	unsigned long getStartAddress();
 	
 };
 

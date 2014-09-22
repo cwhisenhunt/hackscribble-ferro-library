@@ -1,12 +1,12 @@
 Hackscribble_Ferro Library User Guide
 =====================================
 
-#### *Add fast, versatile, non-volatile ferroelectric memory (FRAM) to your Arduino. Simple hardware interface using SPI bus supports up to 32KB per FRAM chip.*
+#### *Add fast, versatile, non-volatile ferroelectric memory (FRAM) to your Arduino. Simple hardware interface using SPI bus supports up to 256KB per FRAM chip.*
 
 <br>
 
 Created on 18 April 2014 by Ray Benitez  
-Last modified on --- by ---  
+Last modified on 19 September 2014 by Ray Benitez  
 Change history in **README.md**  
 
 This software is licensed by Ray Benitez under the MIT License.  
@@ -145,13 +145,17 @@ Hackscribble_Ferro ferro2(MB85RS256B, 9);
 6. Example sketches
 -------------------
 
-The Hackscribble_Ferro library comes with two example sketches:
+The Hackscribble_Ferro library comes with four example sketches:
 
 1. **test** checks that the FRAM has been connected correctly to your Arduino and then executes some of the key Hackscribble_Ferro and Hackscribble_FerroArray methods to check that the FRAM is working properly.
 
 2. **arraytypes** creates arrays for a range of different data types, from `byte` to user-defined `struct`.  As well as checking that your FRAM is working properly, **arraytypes** is a good source of code snippets for you to include in your own sketches.
 
-Both sketches include comments and debug `Serial.println()` statements to explain what they are doing and what results you should expect.
+3. **arraytest** creates an array to fill the available memory and tests that all elements can be written and read correctly.
+
+4. **speedtest** measures the time taken to read from and write to the FRAM.
+
+The sketches include comments and debug `Serial.println()` statements to explain what they are doing and what results you should expect.
 
 
 7. Reference manual
@@ -230,20 +234,25 @@ It also checks that the Arduino can communicate with the FRAM (see `checkForFram
 
 ```
 ferroResult checkForFRAM();
+byte readProductID();
 ```
 
-The `begin()` method calls `checkForFRAM()` to check that the Arduino can communicate with the FRAM.  The method is public so your sketch can use it too.  It works by reading, changing and re-reading unused bits in the FRAM status register. In this way, it can check two-way communication with the FRAM without interfering with your data.  It returns either `ferroOK` or `ferroBadResponse`.
+The `begin()` method calls `checkForFRAM()` to check that the Arduino can communicate with the FRAM.  The method is public so your sketch can use it too.  It works by reading, changing and re-reading unused bits in the FRAM status register. In this way, it can check two-way communication with the FRAM without interfering with your data.  
+
+If the FRAM is one of the newer models that supports the RDID (read device ID) opcode, `checkForFRAM()` also calls `readProductID()`, which reads part of the identifying information from the FRAM and compares it with the part number specified in the program.   
+
+`checkForFRAM()` returns either `ferroOK`, `ferroPartNumberMismatch` or `ferroBadResponse`.
 
 ```
 ferroPartNumber getPartNumber();
 ```
 
-Your sketch will have specified (either explicitly or implicitly) the part number of the FRAM you are using when creating the instance(s) of Hackscribble_Ferro.  So why include `getPartNumber()`?  Recent versions of the Fujitsu FRAMs, for example the MB85RS128B and MB85RS256B, include a part number identifier that could be read by the Arduino. We are looking at including auto-detection in a future version of the library, in which case this method will become more relevant.  
+Your sketch will have specified (either explicitly or implicitly) the part number of the FRAM you are using when creating the instance(s) of Hackscribble_Ferro.  However, you can use `getPartNumber()` to access the part number that has been configured.  
 
 ```
-unsigned int getBottomAddress();
-unsigned int getTopAddress();
-unsigned int getMaxBufferSize();
+unsigned long getBottomAddress();
+unsigned long getTopAddress();
+byte getMaxBufferSize();
 ```
 
 These three methods let your sketch find out the amount of memory available for your data. For example, if you are using an MB85RS128A, the following statements will usually display 64 and 16383 bytes.
@@ -259,8 +268,8 @@ The maximum buffer size is the largest amount of data which can be transferred i
 ##### Reading and writing directly to FRAM
 
 ```
-ferroResult read(unsigned int startAddress, byte numberOfBytes, byte *buffer);
-ferroResult write(unsigned int startAddress, byte numberOfBytes, byte *buffer);
+ferroResult read(unsigned long startAddress, byte numberOfBytes, byte *buffer);
+ferroResult write(unsigned long startAddress, byte numberOfBytes, byte *buffer);
 ```
 
 These methods transfer a block of data (group of adjacent bytes) between the Arduino SRAM and the FRAM.  `startAddress` specifies the address in FRAM of the first byte to be read or written.  `startAddress` must be between the values returned by `getBottomAddress()` and `getTopAddress()` inclusive.  The number of bytes to be read or written is passed in `numberOfBytes`. This cannot exceed the value returned by `getMaxBufferSize()`.  
@@ -294,7 +303,7 @@ When you `read()` and `write()`, the address in FRAM can be specified as a const
 To help with this, each instance of Hackscribble_Ferro maintains, as a private variable, the address which it thinks is the next unused address in the available FRAM memory.  When the instance is created, this variable is set to the value returned by `getBottomAddress()`.  The variable increases when you call the `allocateMemory()` method.
 
 ```
-unsigned int allocateMemory(unsigned int numberOfBytes, ferroResult& result);
+unsigned long allocateMemory(unsigned long numberOfBytes, ferroResult& result);
 ```
 
 This checks that there is room in the FRAM for you to reserve the next `numberOfBytes`.  If there is, it returns the current value of the private variable before increasing it by `numberOfBytes`.  Your calling routine can then make use of the memory starting at the returned address.  Provided it reads and writes between the returned address and (returned address + `numberOfBytes`), your sketch knows it will not bump into any other allocated blocks of memory.
@@ -324,7 +333,7 @@ ferroResult format();
 ##### Creating an instance of Hackscribble_Ferro
 
 ```
-Hackscribble_FerroArray(Hackscribble_Ferro& f, unsigned int numberOfElements, byte sizeOfElement, ferroResult &result);
+Hackscribble_FerroArray(Hackscribble_Ferro& f, unsigned long numberOfElements, byte sizeOfElement, ferroResult &result);
 ```
 The constructor takes four arguments.  The first is the reference to an instance of Hackscribble_Ferro which you must have created previously.  The last is a reference to a variable to take the result code after the method is run.
 
@@ -354,8 +363,8 @@ So long as you do not exceed the available memory in the FRAM, you can create as
 ##### Reading from and writing to arrays
 
 ```
-void readElement(unsigned int index, byte *buffer, ferroResult &result);
-void writeElement(unsigned int index, byte *buffer, ferroResult &result);
+void readElement(unsigned long index, byte *buffer, ferroResult &result);
+void writeElement(unsigned long index, byte *buffer, ferroResult &result);
 ```
 
 To read or write to your arrays, you call the `readElement()` and `writeElement()` methods on the relevant array. You specify with `index` the element you want from 0 to (`numberOfElements` - 1), and you pass a pointer to the variable you want to read from or write to.  The variable must be of the same type as the elements in your array and it must be defined before you call these methods.
@@ -385,7 +394,7 @@ myFloatArray.ReadElement(N, (byte*)&myInteger, myResult);
 We have included a method to find out the start address of an array in FRAM:
 
 ```
-unsigned int getStartAddress();
+unsigned long getStartAddress();
 ```
 
 This is useful for debugging but we do not recommend you use it in your sketches.  `readElement()` and `writeElement()` are all you need to access the data in your arrays.
@@ -410,7 +419,7 @@ A better approach would be for your sketch to be able to check which version of 
 The control block is a safe place for your sketch to store information such as version number.
 
 ```
-unsigned int getControlBlockSize();
+byte getControlBlockSize();
 ```
 
 The control block is 64 bytes long in this version of the library.  To check the size at run time, use `getControlBlockSize()`.
@@ -450,6 +459,8 @@ enum ferroPartNumber
 	MB85RS128B,			// 16KB newer model
 	MB85RS256A,			// 32KB older model
 	MB85RS256B,			// 32KB newer model
+	MB85RS1MT,			// 128KB
+	MB85RS2MT,			// 256KB
 	numberOfPartNumbers  };
 ```
 
@@ -465,6 +476,7 @@ enum ferroResult
 	ferroBadArrayIndex,			// Tried to access a higher number element than you declared when creating the array
 	ferroBadArrayStartAddress,	// Problem when reading or writing array element, probably due to earlier error in array creation
 	ferroBadResponse,			// FRAM did not respond correctly (or at all) to checkForFram()
+	ferroPartNumberMismatch,	// Product ID read from device did not match selected part number
 	ferroUnknownError = 99		// Should not occur :-)
 };
 ```

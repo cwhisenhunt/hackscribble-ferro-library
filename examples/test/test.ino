@@ -11,8 +11,8 @@
 	
 	Created on 18 April 2014
 	By Ray Benitez
-	Last modified on ---
-	By ---
+	Last modified on 22 September 2014
+	By Ray Benitez
 	Change history in "README.md"
 		
 	This software is licensed by Ray Benitez under the MIT License.
@@ -62,6 +62,12 @@ void printPartNumber(ferroPartNumber pn)
 		case MB85RS256B:
 		Serial.print("MB85RS256B");
 		break;		
+		case MB85RS1MT:
+		Serial.print("MB85RS1MT");
+		break;
+		case MB85RS2MT:
+		Serial.print("MB85RS2MT");
+		break;
 		default :
 		Serial.print("unknown part number");
 	}
@@ -94,9 +100,19 @@ void setup()
 	Serial.println(F("Expected result: FRAM response OK; part number = MB85RS128A"));
 	Serial.println(F("Result ..."));
 	
-	if (myFerro.begin() == ferroBadResponse)
+	ferroResult res = myFerro.begin();
+	
+	if ( res == ferroBadResponse)
 	{
 		Serial.println(F("FRAM response not OK"));
+	}
+	else if (res == ferroPartNumberMismatch)
+	{
+		Serial.println(F("FRAM part number mismatch"));
+		Serial.print(F("Density code reported by FRAM:  0x"));
+                char b[10];
+                sprintf(b,"%02X", myFerro.readProductID());
+		Serial.println(b);
 	}
 	else
 	{
@@ -106,8 +122,8 @@ void setup()
 		
 		ferroResult myResult = ferroUnknownError;
 		unsigned int myBufferSize = myFerro.getMaxBufferSize(); 
-		unsigned int myBottom = myFerro.getBottomAddress();
-		unsigned int myTop = myFerro.getTopAddress();
+		unsigned long myBottom = myFerro.getBottomAddress();
+		unsigned long myTop = myFerro.getTopAddress();
 
 
 		// TEST 2
@@ -122,12 +138,20 @@ void setup()
 		Serial.println(F("\nTest: write zero-filled buffer to all available space in FRAM"));
 		Serial.println(F("Expected result: incrementing start address for each write; all result codes = 0"));
 		Serial.println(F("Result ..."));
-		for (unsigned int i = myBottom; i < myTop; i += myBufferSize)
+		for (unsigned long i = myBottom; i < myTop; i += myBufferSize)
 		{
-			Serial.print(i, HEX);
-			Serial.print(F(" "));
+			//Serial.print(i, HEX);
+			//Serial.print(F(" "));
+
+                        char b[10];
+                        sprintf(b,"%06X ",i);
+                        Serial.print(b);
 			Serial.print(myFerro.write(i, myBufferSize, ferroBuffer));
 			Serial.print(F("  "));
+                        if ((i %1024) == 0)
+                        {
+                            Serial.println();
+                        }
 		}
 		Serial.println();
 

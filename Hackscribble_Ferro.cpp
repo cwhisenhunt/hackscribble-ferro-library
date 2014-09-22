@@ -4,7 +4,7 @@
 	==========================
 	
 	Connects Fujitsu Ferroelectric RAM (MB85RS range) to your
-	Arduino to add up to 32KB of fast, non-volatile storage.
+	Arduino to add up to 256KB of fast, non-volatile storage.
 	
 	For information on how to install and use the library,
 	read "Hackscribble_Ferro user guide.md".
@@ -12,7 +12,7 @@
 	
 	Created on 18 April 2014
 	By Ray Benitez
-	Last modified on 10 June 2014
+	Last modified on 19 September 2014
 	By Ray Benitez
 	Change history in "README.md"
 	
@@ -60,30 +60,51 @@ void Hackscribble_Ferro::_deselect()
 
 Hackscribble_Ferro::Hackscribble_Ferro(ferroPartNumber partNumber, byte chipSelect): _partNumber(partNumber), _chipSelect(chipSelect)
 {
-	_topAddressForPartNumber[MB85RS16]		= 0x07FF;
-	_topAddressForPartNumber[MB85RS64]		= 0x1FFF;
-	_topAddressForPartNumber[MB85RS128A]	= 0x3FFF;
-	_topAddressForPartNumber[MB85RS128B]	= 0x3FFF;
-	_topAddressForPartNumber[MB85RS256A]	= 0x7FFF;
-	_topAddressForPartNumber[MB85RS256B]	= 0x7FFF;
+	_topAddressForPartNumber[MB85RS16]		= 0x0007FFUL;
+	_topAddressForPartNumber[MB85RS64]		= 0x001FFFUL;
+	_topAddressForPartNumber[MB85RS128A]	= 0x003FFFUL;
+	_topAddressForPartNumber[MB85RS128B]	= 0x003FFFUL;
+	_topAddressForPartNumber[MB85RS256A]	= 0x007FFFUL;
+	_topAddressForPartNumber[MB85RS256B]	= 0x007FFFUL;
+	_topAddressForPartNumber[MB85RS1MT]		= 0x01FFFFUL;
+	_topAddressForPartNumber[MB85RS2MT]		= 0x03FFFFUL;
+	
+	_addressLengthForPartNumber[MB85RS16]	= ADDRESS16BIT;
+	_addressLengthForPartNumber[MB85RS64]	= ADDRESS16BIT;
+	_addressLengthForPartNumber[MB85RS128A]	= ADDRESS16BIT;
+	_addressLengthForPartNumber[MB85RS128B]	= ADDRESS16BIT;
+	_addressLengthForPartNumber[MB85RS256A]	= ADDRESS16BIT;
+	_addressLengthForPartNumber[MB85RS256B]	= ADDRESS16BIT;
+	_addressLengthForPartNumber[MB85RS1MT]	= ADDRESS24BIT;
+	_addressLengthForPartNumber[MB85RS2MT]	= ADDRESS24BIT;
+	
+	_densityCode[MB85RS16]					= 0x00; // RDID not supported
+	_densityCode[MB85RS64]					= 0x00; // RDID not supported
+	_densityCode[MB85RS128A]				= 0x00; // RDID not supported
+	_densityCode[MB85RS128B]				= 0x04; // Density code in bits 4..0
+	_densityCode[MB85RS256A]				= 0x00; // RDID not supported
+	_densityCode[MB85RS256B]				= 0x05; // Density code in bits 4..0
+	_densityCode[MB85RS1MT]					= 0x07; // Density code in bits 4..0
+	_densityCode[MB85RS2MT]					= 0x08; // Density code in bits 4..0
 																	
-	_baseAddress = 0x0000;
+	_baseAddress = 0x000000;
 	_bottomAddress = _baseAddress + _maxBufferSize;
 	_topAddress = _topAddressForPartNumber[_partNumber];
+	_addressLength = _addressLengthForPartNumber[_partNumber];
 	_numberOfBuffers = (_topAddress - _bottomAddress + 1) / _maxBufferSize;
-	
-	// _chipSelect = chipSelect;
-	// Set the standard SS pin as an output to keep Arduino SPI happy
-	pinMode (SS, OUTPUT);
-	// Set CS to inactive
-	_initialiseChipSelect();
-	pinMode (_chipSelect, OUTPUT);
-	_deselect();
 	_nextFreeByte = _bottomAddress;
 }
 
 ferroResult Hackscribble_Ferro::begin()
 {
+	// Set the standard SS pin as an output to keep Arduino SPI happy
+	pinMode (SS, OUTPUT);
+	
+	// Set CS to inactive
+	_initialiseChipSelect();
+	pinMode (_chipSelect, OUTPUT);
+	_deselect();
+	
 	// Initialize SPI
 	SPI.begin();
 	SPI.setBitOrder(MSBFIRST);
@@ -92,7 +113,6 @@ ferroResult Hackscribble_Ferro::begin()
 		
 	// Check that the FRAM is reachable
 	return checkForFRAM();
-	
 }
 	
 ferroPartNumber Hackscribble_Ferro::getPartNumber()
@@ -100,25 +120,47 @@ ferroPartNumber Hackscribble_Ferro::getPartNumber()
 	return _partNumber;
 }
 
-unsigned int Hackscribble_Ferro::getMaxBufferSize()
+byte Hackscribble_Ferro::getMaxBufferSize()
 {
 	return _maxBufferSize;
 }
 
-unsigned int Hackscribble_Ferro::getBottomAddress()
+unsigned long Hackscribble_Ferro::getBottomAddress()
 {
 	return _bottomAddress;
 }
 
-unsigned int Hackscribble_Ferro::getTopAddress()
+unsigned long Hackscribble_Ferro::getTopAddress()
 {
 	return _topAddress;
+}
+
+
+byte Hackscribble_Ferro::readProductID()
+{
+	// If the device supports RDID, returns density code (bits 4..0 of third byte of RDID response)
+	// Otherwise, returns 0
+	
+	const byte densityMask = 0x1F; // Density code in bits 4..0 
+	byte densityCodeByte = 0x00;
+	
+	if (_densityCode[_partNumber] != 0x00)
+	{
+		_select();
+		SPI.transfer(_RDID);
+		SPI.transfer(_dummy); // Discard first two bytes
+		SPI.transfer(_dummy); //
+		densityCodeByte = SPI.transfer(_dummy) & densityMask;
+		_deselect();
+	}
+	return densityCodeByte;
 }
 
 
 ferroResult Hackscribble_Ferro::checkForFRAM()
 {
 	// Tests that the unused status register bits can be read, inverted, written back and read again
+	// If RDID is supported, tests that Product ID reported by device matches part number
 		
 	const byte srMask = 0x70; // Unused bits are bits 6..4
 	byte registerValue = 0;
@@ -149,19 +191,23 @@ ferroResult Hackscribble_Ferro::checkForFRAM()
 	registerValue = SPI.transfer(_dummy);
 	_deselect();
 		
-	if (((registerValue & srMask) == (newValue & srMask)))
+	if (readProductID() != _densityCode[_partNumber])
 	{
-		return ferroOK;
+		return ferroPartNumberMismatch;
+	}
+	else if (((registerValue & srMask) != (newValue & srMask)))
+	{
+		return ferroBadResponse;
 	}
 	else
 	{
-		return ferroBadResponse;	
+		return ferroOK;
 	}
 		
 }
 	
 	
-unsigned int Hackscribble_Ferro::getControlBlockSize()
+byte Hackscribble_Ferro::getControlBlockSize()
 {
 	return _maxBufferSize;
 }
@@ -175,6 +221,10 @@ void Hackscribble_Ferro::writeControlBlock(byte *buffer)
 	_select();
 	SPI.transfer(_WRITE);
 		
+	if (_addressLength == ADDRESS24BIT)
+	{
+		SPI.transfer(_baseAddress / 65536);
+	}
 	SPI.transfer(_baseAddress / 256);
 	SPI.transfer(_baseAddress % 256);
 		
@@ -194,6 +244,10 @@ void Hackscribble_Ferro::readControlBlock(byte *buffer)
 	_select();
 	SPI.transfer(_READ);
 
+	if (_addressLength == ADDRESS24BIT)
+	{
+		SPI.transfer(_baseAddress / 65536);
+	}
 	SPI.transfer(_baseAddress / 256);
 	SPI.transfer(_baseAddress % 256);
 
@@ -207,7 +261,7 @@ void Hackscribble_Ferro::readControlBlock(byte *buffer)
 }
 	
 
-ferroResult Hackscribble_Ferro::read(unsigned int startAddress, byte numberOfBytes, byte *buffer)
+ferroResult Hackscribble_Ferro::read(unsigned long startAddress, byte numberOfBytes, byte *buffer)
 {
 	// Copies numberOfBytes bytes from FRAM (starting at startAddress) into buffer (starting at 0)
 	// Returns result code
@@ -232,6 +286,10 @@ ferroResult Hackscribble_Ferro::read(unsigned int startAddress, byte numberOfByt
 		
 	_select();
 	SPI.transfer(_READ);
+	if (_addressLength == ADDRESS24BIT)
+	{
+		SPI.transfer(startAddress / 65536);
+	}
 	SPI.transfer(startAddress / 256);
 	SPI.transfer(startAddress % 256);
 	for (byte i = 0; i < numberOfBytes; i++)
@@ -243,7 +301,7 @@ ferroResult Hackscribble_Ferro::read(unsigned int startAddress, byte numberOfByt
 	return ferroOK;
 }
 
-ferroResult Hackscribble_Ferro::write(unsigned int startAddress, byte numberOfBytes, byte *buffer)
+ferroResult Hackscribble_Ferro::write(unsigned long startAddress, byte numberOfBytes, byte *buffer)
 {
 	// Copies numberOfBytes bytes from buffer (starting at 0) into FRAM (starting at startAddress)
 	// Returns result code
@@ -272,6 +330,10 @@ ferroResult Hackscribble_Ferro::write(unsigned int startAddress, byte numberOfBy
 
 	_select();
 	SPI.transfer(_WRITE);
+	if (_addressLength == ADDRESS24BIT)
+	{
+		SPI.transfer(startAddress / 65536);
+	}
 	SPI.transfer(startAddress / 256);
 	SPI.transfer(startAddress % 256);
 	for (byte i = 0; i < numberOfBytes; i++)
@@ -284,7 +346,7 @@ ferroResult Hackscribble_Ferro::write(unsigned int startAddress, byte numberOfBy
 }
 
 
-unsigned int Hackscribble_Ferro::allocateMemory(unsigned int numberOfBytes, ferroResult& result)
+unsigned long Hackscribble_Ferro::allocateMemory(unsigned long numberOfBytes, ferroResult& result)
 {
 	if ((_nextFreeByte + numberOfBytes) < _topAddress)
 	{
@@ -313,9 +375,9 @@ ferroResult Hackscribble_Ferro::format()
 	{
 		buffer[i] = 0;
 	}
-		
+	
 	ferroResult result = ferroOK;
-	unsigned int i = _bottomAddress;
+	unsigned long i = _bottomAddress;
 	while ((i < _topAddress) && (result == ferroOK))
 	{
 		result = write(i, _maxBufferSize, buffer);
@@ -326,7 +388,7 @@ ferroResult Hackscribble_Ferro::format()
 
 
 
-Hackscribble_FerroArray::Hackscribble_FerroArray(Hackscribble_Ferro& f, unsigned int numberOfElements, byte sizeOfElement, ferroResult &result): _f(f), _numberOfElements(numberOfElements), _sizeOfElement(sizeOfElement)
+Hackscribble_FerroArray::Hackscribble_FerroArray(Hackscribble_Ferro& f, unsigned long numberOfElements, byte sizeOfElement, ferroResult &result): _f(f), _numberOfElements(numberOfElements), _sizeOfElement(sizeOfElement)
 {
 	// Creates array in FRAM
 	// Calculates and allocates required memory
@@ -347,7 +409,7 @@ Hackscribble_FerroArray::Hackscribble_FerroArray(Hackscribble_Ferro& f, unsigned
 		
 }
 	
-void Hackscribble_FerroArray::readElement(unsigned int index, byte *buffer, ferroResult &result)
+void Hackscribble_FerroArray::readElement(unsigned long index, byte *buffer, ferroResult &result)
 {
 	// Reads element from array in FRAM
 	// Returns result code
@@ -370,7 +432,7 @@ void Hackscribble_FerroArray::readElement(unsigned int index, byte *buffer, ferr
 	}
 }
 	
-void Hackscribble_FerroArray::writeElement(unsigned int index, byte *buffer, ferroResult &result)
+void Hackscribble_FerroArray::writeElement(unsigned long index, byte *buffer, ferroResult &result)
 {
 	// Writes element to array in FRAM
 	// Returns result code
@@ -393,7 +455,7 @@ void Hackscribble_FerroArray::writeElement(unsigned int index, byte *buffer, fer
 	}
 }
 	
-unsigned int Hackscribble_FerroArray::getStartAddress()
+unsigned long Hackscribble_FerroArray::getStartAddress()
 {
 	return _startAddress;
 }
