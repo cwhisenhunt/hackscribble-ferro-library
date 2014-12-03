@@ -12,7 +12,7 @@
 	
 	Created on 18 April 2014
 	By Ray Benitez
-	Last modified on 19 September 2014
+	Last modified on 29 September 2014
 	By Ray Benitez
 	Change history in "README.md"
 	
@@ -28,35 +28,8 @@
 #include <Hackscribble_Ferro.h>
 
 
-void Hackscribble_Ferro::_initialiseChipSelect()
-{	
-	uint8_t timer = digitalPinToTimer(_chipSelect);
-	_bit = digitalPinToBitMask(_chipSelect);
-	uint8_t port = digitalPinToPort(_chipSelect);
-	if (port == NOT_A_PIN) return;
-	// If the pin that support PWM output, we need to turn it off
-	// before doing a digital write.
-	if (timer != NOT_ON_TIMER) turnOffPWM(timer);
-	_out = portOutputRegister(port);
-}
+boolean Hackscribble_Ferro::_spiIsRunning = false;
 
-void Hackscribble_Ferro::_select()
-{
-	// digitalWrite(_chipSelect, LOW);
-	uint8_t oldSREG = SREG;
-	cli();
-	*_out &= ~_bit;
-	SREG = oldSREG;
-}
-
-void Hackscribble_Ferro::_deselect()
-{
-	// digitalWrite(_chipSelect, HIGH);
-	uint8_t oldSREG = SREG;
-	cli();
-	*_out |= _bit;
-	SREG = oldSREG;
-}
 
 Hackscribble_Ferro::Hackscribble_Ferro(ferroPartNumber partNumber, byte chipSelect): _partNumber(partNumber), _chipSelect(chipSelect)
 {
@@ -86,7 +59,7 @@ Hackscribble_Ferro::Hackscribble_Ferro(ferroPartNumber partNumber, byte chipSele
 	_densityCode[MB85RS256B]				= 0x05; // Density code in bits 4..0
 	_densityCode[MB85RS1MT]					= 0x07; // Density code in bits 4..0
 	_densityCode[MB85RS2MT]					= 0x08; // Density code in bits 4..0
-																	
+	
 	_baseAddress = 0x000000;
 	_bottomAddress = _baseAddress + _maxBufferSize;
 	_topAddress = _topAddressForPartNumber[_partNumber];
@@ -95,44 +68,120 @@ Hackscribble_Ferro::Hackscribble_Ferro(ferroPartNumber partNumber, byte chipSele
 	_nextFreeByte = _bottomAddress;
 }
 
-ferroResult Hackscribble_Ferro::begin()
+
+//
+// PLATFORM SPECIFIC, LOW LEVEL METHODS
+//
+
+void Hackscribble_Ferro::_initialiseSPI(void)
 {
-	// Set the standard SS pin as an output to keep Arduino SPI happy
-	pinMode (SS, OUTPUT);
-	
-	// Set CS to inactive
-	_initialiseChipSelect();
-	pinMode (_chipSelect, OUTPUT);
-	_deselect();
-	
-	// Initialize SPI
 	SPI.begin();
 	SPI.setBitOrder(MSBFIRST);
-	SPI.setDataMode (SPI_MODE0);
-	SPI.setClockDivider(SPI_CLOCK_DIV2);
-		
-	// Check that the FRAM is reachable
-	return checkForFRAM();
+	SPI.setDataMode (HS_SPI_DEFAULT_MODE);
+	SPI.setClockDivider(HS_SPI_DEFAULT_CLOCK);
 }
 	
-ferroPartNumber Hackscribble_Ferro::getPartNumber()
-{
-	return _partNumber;
+	
+void Hackscribble_Ferro::_initialiseCS()
+{	
+		// Set the standard SS pin as an output to keep Arduino SPI happy
+		pinMode (SS, OUTPUT);
+		
+	uint8_t timer = digitalPinToTimer(_chipSelect);
+	_bit = digitalPinToBitMask(_chipSelect);
+	uint8_t port = digitalPinToPort(_chipSelect);
+	if (port == NOT_A_PIN) return;
+	// If the pin that support PWM output, we need to turn it off
+	// before doing a digital write.
+	if (timer != NOT_ON_TIMER) turnOffPWM(timer);
+	_out = portOutputRegister(port);
+	
+	
+		pinMode (_chipSelect, OUTPUT);
+		_deselect();
+
 }
 
-byte Hackscribble_Ferro::getMaxBufferSize()
+void Hackscribble_Ferro::_select()
 {
-	return _maxBufferSize;
+	// digitalWrite(_chipSelect, LOW);
+	uint8_t oldSREG = SREG;
+	cli();
+	*_out &= ~_bit;
+	SREG = oldSREG;
 }
 
-unsigned long Hackscribble_Ferro::getBottomAddress()
+void Hackscribble_Ferro::_deselect()
 {
-	return _bottomAddress;
+	// digitalWrite(_chipSelect, HIGH);
+	uint8_t oldSREG = SREG;
+	cli();
+	*_out |= _bit;
+	SREG = oldSREG;
 }
 
-unsigned long Hackscribble_Ferro::getTopAddress()
+uint8_t Hackscribble_Ferro::_readStatusRegister()
 {
-	return _topAddress;
+	uint8_t rxByte = 0;
+
+	_select();
+	SPI.transfer(_RDSR);
+	rxByte = SPI.transfer(_dummy);
+	_deselect();
+
+	return rxByte;
+}
+
+
+void Hackscribble_Ferro::_writeStatusRegister(uint8_t value)
+{
+	_select();
+	SPI.transfer(_WREN);
+	_deselect();
+	_select();
+	SPI.transfer(_WRSR);
+	SPI.transfer(value);
+	_deselect();
+}
+
+
+void Hackscribble_Ferro::_readMemory(unsigned long address, uint8_t numberOfBytes, uint8_t *buffer)
+{
+	_select();
+	SPI.transfer(_READ);
+	if (_addressLength == ADDRESS24BIT)
+	{
+		SPI.transfer(address / 65536);
+	}
+	SPI.transfer(address / 256);
+	SPI.transfer(address % 256);
+	for (byte i = 0; i < numberOfBytes; i++)
+	{
+		buffer[i] = SPI.transfer(_dummy);
+	}
+	_deselect();
+}
+
+
+void Hackscribble_Ferro::_writeMemory(unsigned long address, uint8_t numberOfBytes, uint8_t *buffer)
+{
+	_select();
+	SPI.transfer(_WREN);
+	_deselect();
+
+	_select();
+	SPI.transfer(_WRITE);
+	if (_addressLength == ADDRESS24BIT)
+	{
+		SPI.transfer(address / 65536);
+	}
+	SPI.transfer(address / 256);
+	SPI.transfer(address % 256);
+	for (byte i = 0; i < numberOfBytes; i++)
+	{
+		SPI.transfer(buffer[i]);
+	}
+	_deselect();
 }
 
 
@@ -141,7 +190,7 @@ byte Hackscribble_Ferro::readProductID()
 	// If the device supports RDID, returns density code (bits 4..0 of third byte of RDID response)
 	// Otherwise, returns 0
 	
-	const byte densityMask = 0x1F; // Density code in bits 4..0 
+	const byte densityMask = 0x1F; // Density code in bits 4..0
 	byte densityCodeByte = 0x00;
 	
 	if (_densityCode[_partNumber] != 0x00)
@@ -157,6 +206,46 @@ byte Hackscribble_Ferro::readProductID()
 }
 
 
+//
+// PLATFORM INDEPENDENT, HIGH LEVEL METHODS
+//
+
+ferroResult Hackscribble_Ferro::begin()
+{
+	_initialiseCS();
+	if (!_spiIsRunning)
+	{
+		_initialiseSPI();
+		_spiIsRunning = true;
+	}	
+	return checkForFRAM();
+}
+	
+	
+ferroPartNumber Hackscribble_Ferro::getPartNumber()
+{
+	return _partNumber;
+}
+
+
+byte Hackscribble_Ferro::getMaxBufferSize()
+{
+	return _maxBufferSize;
+}
+
+
+unsigned long Hackscribble_Ferro::getBottomAddress()
+{
+	return _bottomAddress;
+}
+
+
+unsigned long Hackscribble_Ferro::getTopAddress()
+{
+	return _topAddress;
+}
+
+
 ferroResult Hackscribble_Ferro::checkForFRAM()
 {
 	// Tests that the unused status register bits can be read, inverted, written back and read again
@@ -165,31 +254,18 @@ ferroResult Hackscribble_Ferro::checkForFRAM()
 	const byte srMask = 0x70; // Unused bits are bits 6..4
 	byte registerValue = 0;
 	byte newValue = 0;
-	boolean isPresent = true;
 		
 	// Read current value
-	_select();
-	SPI.transfer(_RDSR);
-	registerValue = SPI.transfer(_dummy);
-	_deselect();
+	registerValue = _readStatusRegister();
 		
 	// Invert current value
 	newValue = registerValue ^ srMask;
 		
 	// Write new value
-	_select();
-	SPI.transfer(_WREN);
-	_deselect();
-	_select();
-	SPI.transfer(_WRSR);
-	SPI.transfer(newValue);
-	_deselect();
+	_writeStatusRegister(newValue);
 		
 	// Read again
-	_select();
-	SPI.transfer(_RDSR);
-	registerValue = SPI.transfer(_dummy);
-	_deselect();
+	registerValue = _readStatusRegister();
 		
 	if (readProductID() != _densityCode[_partNumber])
 	{
@@ -212,54 +288,18 @@ byte Hackscribble_Ferro::getControlBlockSize()
 	return _maxBufferSize;
 }
 
-void Hackscribble_Ferro::writeControlBlock(byte *buffer)
+
+void Hackscribble_Ferro::writeControlBlock(uint8_t *buffer)
 {
-	_select();
-	SPI.transfer(_WREN);
-	_deselect();
-
-	_select();
-	SPI.transfer(_WRITE);
-		
-	if (_addressLength == ADDRESS24BIT)
-	{
-		SPI.transfer(_baseAddress / 65536);
-	}
-	SPI.transfer(_baseAddress / 256);
-	SPI.transfer(_baseAddress % 256);
-		
-	for (byte i = 0; i < _maxBufferSize; i++)
-	{
-		SPI.transfer(buffer[i]);
-	}
-		
-	_deselect();
-
+	_writeMemory(_baseAddress, _maxBufferSize, buffer);
 }
 
 
-void Hackscribble_Ferro::readControlBlock(byte *buffer)
+void Hackscribble_Ferro::readControlBlock(uint8_t *buffer)
 {
-
-	_select();
-	SPI.transfer(_READ);
-
-	if (_addressLength == ADDRESS24BIT)
-	{
-		SPI.transfer(_baseAddress / 65536);
-	}
-	SPI.transfer(_baseAddress / 256);
-	SPI.transfer(_baseAddress % 256);
-
-	for (byte i = 0; i < _maxBufferSize; i++)
-	{
-		buffer[i] = SPI.transfer(_dummy);
-	}
-
-	_deselect();
-		
+	_readMemory(_baseAddress, _maxBufferSize, buffer);
 }
-	
+
 
 ferroResult Hackscribble_Ferro::read(unsigned long startAddress, byte numberOfBytes, byte *buffer)
 {
@@ -283,23 +323,12 @@ ferroResult Hackscribble_Ferro::read(unsigned long startAddress, byte numberOfBy
 	{
 		return ferroBadFinishAddress;
 	}
-		
-	_select();
-	SPI.transfer(_READ);
-	if (_addressLength == ADDRESS24BIT)
-	{
-		SPI.transfer(startAddress / 65536);
-	}
-	SPI.transfer(startAddress / 256);
-	SPI.transfer(startAddress % 256);
-	for (byte i = 0; i < numberOfBytes; i++)
-	{
-		buffer[i] = SPI.transfer(_dummy);
-	}
-	_deselect();
-		
+
+	_readMemory(startAddress, numberOfBytes, buffer);
+			
 	return ferroOK;
 }
+
 
 ferroResult Hackscribble_Ferro::write(unsigned long startAddress, byte numberOfBytes, byte *buffer)
 {
@@ -323,25 +352,9 @@ ferroResult Hackscribble_Ferro::write(unsigned long startAddress, byte numberOfB
 	{
 		return ferroBadFinishAddress;
 	}
-		
-	_select();
-	SPI.transfer(_WREN);
-	_deselect();
 
-	_select();
-	SPI.transfer(_WRITE);
-	if (_addressLength == ADDRESS24BIT)
-	{
-		SPI.transfer(startAddress / 65536);
-	}
-	SPI.transfer(startAddress / 256);
-	SPI.transfer(startAddress % 256);
-	for (byte i = 0; i < numberOfBytes; i++)
-	{
-		SPI.transfer(buffer[i]);
-	}
-	_deselect();
-
+	_writeMemory(startAddress, numberOfBytes, buffer);
+	
 	return ferroOK;
 }
 
@@ -360,7 +373,6 @@ unsigned long Hackscribble_Ferro::allocateMemory(unsigned long numberOfBytes, fe
 		result = ferroBadFinishAddress;
 		return 0;
 	}
-		
 }
 
 
@@ -387,7 +399,6 @@ ferroResult Hackscribble_Ferro::format()
 }
 
 
-
 Hackscribble_FerroArray::Hackscribble_FerroArray(Hackscribble_Ferro& f, unsigned long numberOfElements, byte sizeOfElement, ferroResult &result): _f(f), _numberOfElements(numberOfElements), _sizeOfElement(sizeOfElement)
 {
 	// Creates array in FRAM
@@ -408,6 +419,7 @@ Hackscribble_FerroArray::Hackscribble_FerroArray(Hackscribble_Ferro& f, unsigned
 	}
 		
 }
+
 	
 void Hackscribble_FerroArray::readElement(unsigned long index, byte *buffer, ferroResult &result)
 {
@@ -431,6 +443,7 @@ void Hackscribble_FerroArray::readElement(unsigned long index, byte *buffer, fer
 		result = _f.read(_startAddress + (index * _sizeOfElement), _sizeOfElement, buffer);
 	}
 }
+
 	
 void Hackscribble_FerroArray::writeElement(unsigned long index, byte *buffer, ferroResult &result)
 {
@@ -454,6 +467,7 @@ void Hackscribble_FerroArray::writeElement(unsigned long index, byte *buffer, fe
 		result = _f.write(_startAddress + (index * _sizeOfElement), _sizeOfElement, buffer);
 	}
 }
+
 	
 unsigned long Hackscribble_FerroArray::getStartAddress()
 {

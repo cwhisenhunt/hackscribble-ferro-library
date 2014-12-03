@@ -5,7 +5,7 @@ Hackscribble_Ferro Library
 
   
 Created on 18 April 2014 by Ray Benitez  
-Last modified on 22 September 2014 by Ray Benitez		
+Last modified on 3 December 2014 by Ray Benitez		
   
 Please see **user guide.md** for more information on how to use the library.
 
@@ -17,6 +17,16 @@ git@hackscribble.com | http://www.hackscribble.com | http://www.twitter.com/hack
  
 
 ### Change history
+
+#### 1.5 (3 December 2014)
+
+Refactored SPI-related code in preparation for new ARM version of library.
+
+Added example program for multiple FRAMs.
+
+Corrected redundant variables in "arraytypes" example program.
+
+Improved structure of example programs.
 
 #### 1.4 (22 September 2014)
 

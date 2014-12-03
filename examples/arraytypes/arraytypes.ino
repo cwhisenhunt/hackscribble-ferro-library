@@ -95,11 +95,6 @@ void setup()
 		Serial.println(F("FRAM response OK"));
 		
 		ferroResult myResult = ferroUnknownError;
-		unsigned int myBufferSize = myFerro.getMaxBufferSize(); 
-		unsigned int myBottom = myFerro.getBottomAddress();
-		unsigned int myTop = myFerro.getTopAddress();
-
-
 
 
 		// FRAM ARRAY TESTS
@@ -187,7 +182,7 @@ void setup()
 		Serial.println(F("Result ..."));
 		Hackscribble_FerroArray myIntArray(myFerro, 10, sizeof(int), myResult);
 		testInt = -12345;
-		newByte = 4321;
+		newInt = 4321;
 		
 #ifdef WRITE_TO_FRAM
 		myIntArray.writeElement(3, (uint8_t*)&testInt, myResult);
@@ -222,7 +217,7 @@ void setup()
 		Serial.println(F("Result ..."));
 		Hackscribble_FerroArray myLongArray(myFerro, 10, sizeof(long), myResult);
 		testLong = -1234567;
-		newByte = 4321;
+		newLong = 4321;
 
 
 #ifdef WRITE_TO_FRAM
@@ -258,7 +253,7 @@ void setup()
 		Serial.println(F("Result ..."));
 		Hackscribble_FerroArray myFloatArray(myFerro, 10, sizeof(float), myResult);
 		testFloat = 3.14159;
-		newULong = 12345;
+		newFloat = 12345;
 
 
 #ifdef WRITE_TO_FRAM

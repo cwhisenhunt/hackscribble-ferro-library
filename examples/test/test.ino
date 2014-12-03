@@ -73,6 +73,11 @@ void printPartNumber(ferroPartNumber pn)
 	}
 }
 
+
+#define PART_NUMBER MB85RS256B
+#define PART_NAME	"MB85RS256B"
+
+
 void setup() 
 {
 	
@@ -83,10 +88,10 @@ void setup()
 	// Hackscribble_Ferro library uses standard Arduino SPI pin definitions:  MOSI, MISO, SCK.
 	// Next statement creates an instance of Ferro using the standard Arduino SS pin and
 	// default FRAM part number, MB85RS128A.
-	Hackscribble_Ferro myFerro;
+	// Hackscribble_Ferro myFerro;
 
 	// You specify a different FRAM part number like this ...
-	// Hackscribble_Ferro myFerro(MB85RS256B);
+	Hackscribble_Ferro myFerro(PART_NUMBER);
 	
 	// If required, you can use a different chip select pin instead of SS, for example 
 	// when you have multiple devices on the SPI bus. You specify the pin like this ...
@@ -97,7 +102,8 @@ void setup()
 	// TEST 1
 	
 	Serial.println(F("\nTest: check for correct response from FRAM"));
-	Serial.println(F("Expected result: FRAM response OK; part number = MB85RS128A"));
+	Serial.print(F("Expected result: FRAM response OK; part number = "));
+	Serial.println(PART_NAME);
 	Serial.println(F("Result ..."));
 	
 	ferroResult res = myFerro.begin();
@@ -110,8 +116,8 @@ void setup()
 	{
 		Serial.println(F("FRAM part number mismatch"));
 		Serial.print(F("Density code reported by FRAM:  0x"));
-                char b[10];
-                sprintf(b,"%02X", myFerro.readProductID());
+        char b[10];
+        sprintf(b,"%02X", myFerro.readProductID());
 		Serial.println(b);
 	}
 	else
@@ -143,15 +149,15 @@ void setup()
 			//Serial.print(i, HEX);
 			//Serial.print(F(" "));
 
-                        char b[10];
-                        sprintf(b,"%06X ",i);
-                        Serial.print(b);
+            char b[10];
+            sprintf(b,"%06X ",i);
+            Serial.print(b);
 			Serial.print(myFerro.write(i, myBufferSize, ferroBuffer));
 			Serial.print(F("  "));
-                        if ((i %1024) == 0)
-                        {
-                            Serial.println();
-                        }
+			if ((i %1024) == 0)
+			{
+				Serial.println();
+			}
 		}
 		Serial.println();
 
@@ -287,29 +293,35 @@ void setup()
 		};
 
 		myResult = ferroUnknownError;
+		unsigned long address1 = myFerro.getControlBlockSize();
 
 		Serial.println(F("\nTest: create a FerroArray of struct"));
-		Serial.println(F("Expected result: result code = 0; start address of array = 64"));
+		Serial.print(F("Expected result: result code = 0; start address of array = "));
+		Serial.println(address1);
 		Serial.println(F("Result ..."));
 		Hackscribble_FerroArray myArray(myFerro, 20, sizeof(testStruct), myResult);
 		Serial.println(myResult);
 		Serial.println(myArray.getStartAddress());
+		unsigned long address2 = address1 + (20 * sizeof(testStruct));
 
-
+		
 		// TEST 10
 			
 		Serial.println(F("\nTest: create a FerroArray of float"));
-		Serial.println(F("Expected result: result code = 0; start address of array = 224"));
+		Serial.print(F("Expected result: result code = 0; start address of array = "));
+		Serial.println(address2);
 		Serial.println(F("Result ..."));
 		Hackscribble_FerroArray anotherArray(myFerro, 200, sizeof(float), myResult);
 		Serial.println(myResult);
 		Serial.println(anotherArray.getStartAddress());
+		unsigned long address3 = address2 + (200 * sizeof(float));
 
 	
 		// TEST 11
 		// Create this dummy array to check the size of the previous float array
 		Serial.println(F("\nTest: create a FerroArray of int"));
-		Serial.println(F("Expected result: start address of array = 1024"));
+		Serial.print(F("Expected result: start address of array = "));
+		Serial.println(address3);
 		Serial.println(F("Result ..."));
 		Hackscribble_FerroArray dummyArray(myFerro, 300, sizeof(int), myResult);
 		Serial.println(dummyArray.getStartAddress());	

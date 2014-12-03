@@ -12,7 +12,7 @@
 	
 	Created on 18 April 2014
 	By Ray Benitez
-	Last modified on 19 September 2014
+	Last modified on 29 September 2014
 	By Ray Benitez
 	Change history in "README.md"
 		
@@ -27,6 +27,10 @@
 
 #include "Arduino.h"
 #include <SPI.h>
+
+
+#define HS_SPI_DEFAULT_MODE			SPI_MODE0
+#define HS_SPI_DEFAULT_CLOCK		SPI_CLOCK_DIV2
 
 
 // MB85RS part numbers
@@ -78,6 +82,7 @@ private:
 	byte _chipSelect;
 	volatile uint8_t *_out;
 	uint8_t _bit;
+	static boolean _spiIsRunning;
 	
 	// FRAM opcodes
 	static const byte _WREN = 0x06;
@@ -108,7 +113,12 @@ private:
 	// FRAM current next byte to allocate
 	unsigned long _nextFreeByte;
 
-	void _initialiseChipSelect();
+	uint8_t _readStatusRegister(void);
+	void _writeStatusRegister(uint8_t value);
+	void _readMemory(unsigned long address, uint8_t numberOfBytes, uint8_t *buffer);
+	void _writeMemory(unsigned long address, uint8_t numberOfBytes, uint8_t *buffer);
+	void _initialiseSPI(void);
+	void _initialiseCS(void);
 	void _select();
 	void _deselect();
 

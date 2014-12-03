@@ -153,7 +153,10 @@ The Hackscribble_Ferro library comes with four example sketches:
 
 3. **arraytest** creates an array to fill the available memory and tests that all elements can be written and read correctly.
 
-4. **speedtest** measures the time taken to read from and write to the FRAM.
+4. **multiple** is a simplified version of **arraytest** that tests up to three connected FRAMs.
+
+5. **speedtest** measures the time taken to read from and write to the FRAM.
+
 
 The sketches include comments and debug `Serial.println()` statements to explain what they are doing and what results you should expect.
 
