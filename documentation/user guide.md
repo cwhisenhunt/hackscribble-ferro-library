@@ -6,7 +6,7 @@ Hackscribble_Ferro Library User Guide
 <br>
 
 Created on 18 April 2014 by Ray Benitez  
-Last modified on 19 September 2014 by Ray Benitez  
+Last modified on 19 June 2016 by Ray Benitez  
 Change history in **README.md**  
 
 This software is licensed by Ray Benitez under the MIT License.  
@@ -295,7 +295,7 @@ resultCode = myFerro.write(2048, 32, ferroBuffer);
 And, this is how to read 48 bytes of data back from the FRAM, but starting at address 9999:
 
 ```
-resultCode = myFerro.write(9999, 48, ferroBuffer);
+resultCode = myFerro.read(9999, 48, ferroBuffer);
 // Code here to move your data out of ferroBuffer
 ```
 
@@ -451,7 +451,7 @@ myFerro.writeControlBlock(ferroControlBuffer);
 
 #### 7.5 Enumerated types
 
-This version of the library supports the following MB85RS variants:
+This version of the library supports the following MB85RS variants: 
 
 ```
 enum ferroPartNumber
@@ -466,6 +466,7 @@ enum ferroPartNumber
 	MB85RS2MT,			// 256KB
 	numberOfPartNumbers  };
 ```
+> The MB85RS64V device (5V version of the MB85RS64) is also supported. Use `MB85RS64` in the constructor.
 
 Methods in Hackscribble_Ferro and Hackscribble_FerroArray return the following standard result codes.  Most of these can only happen if you are using the lower level methods in Hackscribble_Ferro to manage the FRAM yourself.  
 ```

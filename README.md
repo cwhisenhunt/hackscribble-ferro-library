@@ -5,7 +5,7 @@ Hackscribble_Ferro Library
 
   
 Created on 18 April 2014 by Ray Benitez  
-Last modified on 3 December 2014 by Ray Benitez		
+Last modified on 19 June 2016 by Ray Benitez		
   
 Please see **user guide.md** for more information on how to use the library.
 
@@ -17,6 +17,12 @@ git@hackscribble.com | http://www.hackscribble.com | http://www.twitter.com/hack
  
 
 ### Change history
+
+#### 1.51 (19 June 2016)
+
+Fixed typo in example code fragment in user guide.
+
+Added comment to user guide about support for MB85RS64V variant. 
 
 #### 1.5 (3 December 2014)
 
